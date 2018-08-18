@@ -19,8 +19,12 @@ const watchCompiler = () => {
       colors: true,
       modules: false,
       children: false,
-      chunks: true,
-      chunkModules: false
+      chunks: false,
+      chunkModules: false,
+      assets: false,
+      errors: true,
+      errorDetails: true,
+      entrypoints: true
     }) + '\n\n');
   });
 }

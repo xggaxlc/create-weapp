@@ -6,9 +6,13 @@ const compiler = webpack(webpackConfig);
 compiler.run((err, stats) => {
   process.stdout.write(stats.toString({
     colors: true,
-    modules: false,
-    children: false,
-    chunks: true,
-    chunkModules: false
+	  modules: false,
+	  children: false,
+	  chunks: false,
+	  chunkModules: false,
+	  assets: true,
+	  errors: true,
+	  errorDetails: true,
+	  entrypoints: false
   }) + '\n\n');
 });
