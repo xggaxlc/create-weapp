@@ -25,7 +25,8 @@ module.exports = class WeappWebpackPlugin {
     compiler.options.entry = this.getEntry();
     compiler.options.output.path = distPath;
     compiler.options.output.filename = '[name].js';
-    compiler.options.output.globalObject = 'wx';
+    compiler.options.output.globalObject = 'global';
+    compiler.options.output.libraryTarget = 'umd';
     compiler.options.optimization = _.merge({}, compiler.options.optimization, {
       splitChunks: {
         chunks: 'all',
