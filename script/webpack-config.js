@@ -10,9 +10,7 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: [
-          'ts-loader'
-        ]
+        use: ['ts-loader']
       },
       {
         test: /\.scss$/,
@@ -24,7 +22,7 @@ module.exports = {
                 const ext = path.extname(file);
                 const filename = file.replace(srcPath, '').replace(ext, '');
                 return `${file.replace(srcPath, '').replace(ext, '')}.wxss`;
-              },
+              }
             }
           },
           'extract-loader',
@@ -40,10 +38,10 @@ module.exports = {
   plugins: [
     new WeappWebpackPlugin({
       srcPath: config.srcPath,
-      distPath: config.distPath
+      outputPath: config.outputPath
     }),
     new webpack.DefinePlugin({
       IS_PRODUCTION: config.IS_PRODUCTION
-    }),
+    })
   ]
 }

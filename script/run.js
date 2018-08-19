@@ -1,10 +1,7 @@
 const webpack = require('webpack');
 const webpackConfig = require('./webpack-config');
-const config = require('./config');
+const { srcPath } = require('./config');
 const chokidar = require('chokidar');
-
-const path = require('path');
-const srcPath = path.resolve('src');
 
 webpackConfig.mode = 'development';
 
@@ -35,7 +32,7 @@ const runWebpackWatch = () => {
 }
 
 chokidar
-  .watch(`${config.srcPath}/**/*.ts`, { ignoreInitial: true })
+  .watch(`${srcPath}/**/*.ts`, { ignoreInitial: true })
   .on('add', runWebpackWatch)
   .on('unlink', runWebpackWatch);
 

@@ -3,6 +3,8 @@ const path = require('path');
 const glob = require('glob');
 const _ = require('lodash');
 const shell = require('shelljs');
+const relative = path.relative;
+const dirname = path.dirname;
 const { ConcatSource } = require('webpack-sources');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -11,25 +13,29 @@ const NAME = 'WeappWebpackPlugin';
 module.exports = class WeappWebpackPlugin {
 
   constructor(config = {}) {
+    const defaultSrcPath = path.resolve('src');
     const defaultConfig = {
-      distPath: path.resolve('dist'),
-      srcPath: path.resolve('src')
+      outputPath: path.resolve('dist'),
+      srcPath: defaultSrcPath,
+      miniprogramPath: defaultSrcPath,
     }
     this.config = Object.assign({}, defaultConfig, config);
+    this.config.appPath = path.join(this.config.miniprogramPath, 'app.js');
     this.clearDist();
   }
 
   apply(compiler) {
-    const { srcPath, distPath } = this.config;
-
+    const { srcPath, outputPath, appPath, miniprogramPath } = this.config;
     compiler.options.entry = this.getEntry();
-    compiler.options.output.path = distPath;
-    compiler.options.output.filename = '[name].js';
+    compiler.options.output.path = outputPath;
+    compiler.options.output.filename = '[name]';
     compiler.options.output.globalObject = 'global';
     compiler.options.output.libraryTarget = 'umd';
     compiler.options.optimization = _.merge({}, compiler.options.optimization, {
       splitChunks: {
-        chunks: 'all',
+        chunks(chunk) {
+          return chunk.name.startsWith(relative(srcPath, miniprogramPath));
+        },
         minSize: 0,
         minChunks: 1,
         name: true,
@@ -52,7 +58,7 @@ module.exports = class WeappWebpackPlugin {
     compiler.hooks.afterEnvironment.tap(NAME, () => {
       new CopyWebpackPlugin([{
         from: srcPath,
-        to: distPath,
+        to: outputPath,
         cache: true,
       }], { ignore: ['*.js', '*.ts', '*.scss', '*.less', '*.css', '*.md'], debug: false }).apply(compiler);
     });
@@ -60,44 +66,39 @@ module.exports = class WeappWebpackPlugin {
     compiler.hooks.emit.tapAsync(NAME, (compilation, callback) => {
       const chunks = compilation.chunks;
       const assets = compilation.assets;
+      const nonEntryChunks = chunks.filter(chunk => !chunk.hasRuntime());
 
-      const chunkHasEntry = chunk => chunk.hasRuntime();
-      const nonEntryChunks = chunks.filter(chunk => !chunkHasEntry(chunk));
-
-      chunks.forEach(chunk => {
-        if (chunkHasEntry(chunk)) {
-          chunk.files.forEach(filename => {
-            const source = assets[filename].source();
-            let injectContent = '';
-            nonEntryChunks.forEach(nonEntryChunk => {
-              nonEntryChunk.files.forEach(file => {
-                const commonPath = path.relative(distPath + path.dirname(filename), `${distPath}/${file}`);
-                injectContent += `;require('./${commonPath}');\n`;
-              });
-            });
-            assets[filename] = new ConcatSource(injectContent + source);
-          });
-        }
-      });
+      const appAssetName = this.getEntryName(appPath);
+      const appAssetConcatSource = new ConcatSource(assets[appAssetName].source());
+      _.flattenDeep(nonEntryChunks.map(chunk => chunk.files))
+        .forEach(assetName => {
+          appAssetConcatSource.add(assets[assetName].source());
+          delete assets[assetName];
+        });
+      assets[appAssetName] = appAssetConcatSource;
       callback();
     });
   }
 
   clearDist() {
-    const { distPath } = this.config;
-    shell.rm('-rf', distPath);
-    shell.mkdir(distPath);
+    const { outputPath } = this.config;
+    shell.rm('-rf', outputPath);
+    shell.mkdir(outputPath);
+  }
+
+  getEntryName(filename) {
+    const { srcPath } = this.config;
+    const ext = path.extname(filename);
+    return relative(srcPath, filename).replace(ext, '.js');
   }
 
   getEntry() {
     const { srcPath } = this.config;
     const entry = {};
     glob.sync(`${srcPath}/**/*.ts`)
-    .forEach(file => {
-      if (!/\.d\.ts$/.test(file)) {
-        const ext = path.extname(file);
-        const entryKey = file.replace(srcPath, '').replace(ext, '');
-        entry[entryKey] = file;
+    .forEach(filename => {
+      if (!/\.d\.ts$/.test(filename)) {
+        entry[this.getEntryName(filename)] = filename;
       }
     });
     return entry;
