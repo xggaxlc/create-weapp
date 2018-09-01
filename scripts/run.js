@@ -1,12 +1,11 @@
 const webpack = require('webpack');
 const webpackConfig = require('./webpack-config');
-const { srcPath } = require('./config');
-const chokidar = require('chokidar');
-
-webpackConfig.mode = 'development';
+const { getEntry } = require('./get-entry');
 
 let webpackWatcher;
-const watchCompiler = () => {
+async function watchCompiler() {
+  webpackConfig.mode = 'development';
+  webpackConfig.entry = await getEntry();
   const compiler = webpack(webpackConfig);
   webpackWatcher = compiler.watch({
     poll: true,
@@ -30,10 +29,5 @@ const runWebpackWatch = () => {
   webpackWatcher && webpackWatcher.close();
   watchCompiler();
 }
-
-chokidar
-  .watch(`${srcPath}/**/*.ts`, { ignoreInitial: true })
-  .on('add', runWebpackWatch)
-  .on('unlink', runWebpackWatch);
 
 runWebpackWatch();
