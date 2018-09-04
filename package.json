@@ -30,6 +30,7 @@
     "webpack-sources": "^1.1.0"
   },
   "dependencies": {
+    "core-js": "^2.5.7",
     "lodash-es": "^4.17.10"
   }
 }
