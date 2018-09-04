@@ -1,13 +1,14 @@
 const webpack = require('webpack');
 const webpackConfig = require('./webpack-config');
+const { getWebpackConfig } = require('./webpack-config');
 const { getEntry } = require('./get-entry');
 
-let webpackWatcher;
 async function watchCompiler() {
+  const entry = await getEntry();
+  const webpackConfig = getWebpackConfig(entry);
   webpackConfig.mode = 'development';
-  webpackConfig.entry = await getEntry();
   const compiler = webpack(webpackConfig);
-  webpackWatcher = compiler.watch({
+  compiler.watch({
     poll: true,
     ignored: /node_modules/
   }, (err, stats) => {
@@ -15,7 +16,7 @@ async function watchCompiler() {
       colors: true,
       modules: false,
       children: false,
-      chunks: false,
+      chunks: true,
       chunkModules: false,
       assets: false,
       errors: true,
@@ -25,9 +26,4 @@ async function watchCompiler() {
   });
 }
 
-const runWebpackWatch = () => {
-  webpackWatcher && webpackWatcher.close();
-  watchCompiler();
-}
-
-runWebpackWatch();
+watchCompiler();

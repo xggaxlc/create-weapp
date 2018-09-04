@@ -39,25 +39,16 @@ async function getEntry() {
       )
     );
     if (arr.length) {
-      entry.push(arr);
+      entry = entry.concat(arr);
       return getComponent(arr);
     }
   }
 
   await getComponent(entry);
-  const entryObj = {};
-   _.flattenDeep(entry).forEach(item => entryObj[getEntryName(item)] = item + '.ts');
-  return entryObj;
-}
-
-function getEntryName(filename) {
-  const ext = extname(filename);
-  const basename = relative(appRoot, filename);
-  return ext ? basename.replace(ext, '.js') : basename + '.js';
+  return entry;
 }
 
 module.exports = {
-  getEntryName,
   getEntry,
   readJsonFile
 }
