@@ -1,16 +1,16 @@
 const path = require('path');
-const uuid = require('uuid');
 const webpack = require('webpack');
 
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { appRoot, outputPath, bundleName } = require('./config');
 const WeappWebpackPlugin = require('./plugin');
+const { getEntryMap } = require('./utils');
 
 const { NODE_ENV, PORT, IP = require('ip').address() } = process.env;
 
 function getWebpackConfig(entry = []) {
-  const entryMap = {};
-  entry.forEach(item => entryMap[item] = 'func_' + uuid.v4().replace(/-/g, ''));
+
+  const entryMap = getEntryMap(entry);
 
   const config = {
     devtool: false,
@@ -86,6 +86,4 @@ function getWebpackConfig(entry = []) {
   return config;
 }
 
-module.exports = {
-  getWebpackConfig
-}
+module.exports = getWebpackConfig;

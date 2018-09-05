@@ -1,43 +1,35 @@
-const path = require('path');
-const jsonFile = require('jsonFile');
-const fs = require('fs');
 const _ = require('lodash');
-const { appRoot } = require('./config');
+const { join, isAbsolute, dirname } = require('path');
+const { readJsonFile } = require('./utils');
 
-const { relative, extname, join } = path;
+async function getEntry(appRoot) {
+  const readJson = readJsonFile(appRoot);
+  const { pages } = await readJson('/app');
+  let entry = [
+    '/app',
+    ...pages.map(page => page.startsWith('/') ? page : `/${page}`)
+  ];
 
-async function readJsonFile(file) {
-  file = extname(file) ? file : `${file}.json`;
-  if (fs.existsSync(file)) {
-    return new Promise((resolve, reject) => {
-      jsonFile.readFile(file, (err, obj) => {
-        if (err) {
-          return reject(err);
+  const getComponent = async(entryArr) => {
+    const componentsJsonWithPath = await Promise.all(
+      entryArr.map(async (path) => {
+        const json = await readJson(path);
+        return {
+          path,
+          json
         }
-        resolve(obj);
+      })
+    );
+
+    const componentsArr = componentsJsonWithPath.map(({ path, json }) => {
+      const { usingComponents = {} } = json;
+      return _.map(usingComponents, componentPath => {
+        // 绝对路径和相对路径判断
+        return isAbsolute(componentPath) ? componentPath : join(dirname(path), componentPath);
       });
     });
-  }
-  return {};
-}
 
-function getAbsolutePath(relativePath) {
-  return join(appRoot, relativePath);
-}
-
-async function getEntry() {
-  const appJson = join(appRoot, 'app.json');
-  const appJs = join(appRoot, 'app');
-
-  const { pages } = await readJsonFile(appJson);
-  let entry = [appJs].concat(pages.map(getAbsolutePath));
-  const getComponent = async(entryArr) => {
-    const arr = _.uniq(
-      _.flattenDeep(
-        (await Promise.all(entryArr.map(readJsonFile)))
-        .map(({ usingComponents = {} }) => _.map(usingComponents, getAbsolutePath))
-      )
-    );
+    const arr = _.uniq(_.flattenDeep(componentsArr));
     if (arr.length) {
       entry = entry.concat(arr);
       return getComponent(arr);
@@ -45,10 +37,7 @@ async function getEntry() {
   }
 
   await getComponent(entry);
-  return entry;
+  return entry.map(relativePath => join(appRoot, relativePath));
 }
 
-module.exports = {
-  getEntry,
-  readJsonFile
-}
+module.exports = getEntry;

@@ -1,11 +1,12 @@
 const _ = require('lodash');
 const { getOptions } = require('loader-utils');
 const { extname, relative, dirname, basename } = require('path');
+const { getEntryKeyByResourceFile } = require('./utils');
 
 module.exports = function(source) {
   const { entryMap, entry } = getOptions(this);
   const resourcePath = this.resourcePath;
-  const entryKey = resourcePath.replace(extname(resourcePath), '').trim();
+  const entryKey = getEntryKeyByResourceFile(resourcePath);
 
   // 不是entry不用包装
   if (!entryMap[entryKey]) {
@@ -19,15 +20,15 @@ module.exports = function(source) {
     _.forEach(entryMap, (val, key) => {
       if (entryKey !== key) {
         const relativePath = relative(dirname(resourcePath), key);
-        importInject += `var ${val} = require('./${relativePath}').${val};exports.${val} = ${val};\n`;
+        importInject += `exports.${val} = require('./${relativePath}').${val};\n`;
       }
     });
   }
   const fnName = entryMap[entryKey];
   return `
-  ${importInject}
-  exports.${fnName} = function() {
-    ${source}
-  };
+${importInject}
+exports.${fnName} = function() {
+  ${source}
+};
   `
 }

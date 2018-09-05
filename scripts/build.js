@@ -1,12 +1,12 @@
 const shelljs = require('shelljs');
 const webpack = require('webpack');
-const { getWebpackConfig } = require('./webpack-config');
-const { getEntry } = require('./get-entry');
-const { outputPath } = require('./config');
+const getWebpackConfig = require('./webpack-config');
+const getEntry = require('./get-entry');
+const { outputPath, appRoot } = require('./config');
 
 async function run() {
   shelljs.rm('-rf', outputPath);
-  const entry = await getEntry();
+  const entry = await getEntry(appRoot);
   const webpackConfig = getWebpackConfig(entry);
   webpackConfig.mode = 'production';
   const compiler = webpack(webpackConfig);

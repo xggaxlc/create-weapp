@@ -1,10 +1,11 @@
 const webpack = require('webpack');
 const webpackConfig = require('./webpack-config');
-const { getWebpackConfig } = require('./webpack-config');
-const { getEntry } = require('./get-entry');
+const getWebpackConfig = require('./webpack-config');
+const getEntry = require('./get-entry');
+const { appRoot } = require('./config');
 
 async function watchCompiler() {
-  const entry = await getEntry();
+  const entry = await getEntry(appRoot);
   const webpackConfig = getWebpackConfig(entry);
   webpackConfig.mode = 'development';
   const compiler = webpack(webpackConfig);

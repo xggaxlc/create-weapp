@@ -21,7 +21,6 @@ module.exports = class WeappWebpackPlugin {
       const assets = compilation.assets;
       const chunks = compilation.chunks;
 
-      const bundleName = 'bundle.js';
       const bundleAssets = new ConcatSource();
       _.forEach(entryMap, (val, key) => {
         const assetsName = key.replace(appRoot, '').trim() + '.js';
