@@ -19,9 +19,6 @@ module.exports = class WeappWebpackPlugin {
 
     compiler.hooks.emit.tapAsync(NAME, (compilation, callback) => {
       const assets = compilation.assets;
-      const chunks = compilation.chunks;
-
-      const bundleAssets = new ConcatSource();
       _.forEach(entryMap, (val, key) => {
         const assetsName = key.replace(appRoot, '').trim() + '.js';
         const relativePath = relative(dirname(assetsName), `/${bundleName}`);
