@@ -37,7 +37,7 @@ async function getEntry(appRoot) {
   }
 
   await getComponent(entry);
-  return entry.map(relativePath => join(appRoot, relativePath));
+  return _.uniq(entry).map(relativePath => join(appRoot, relativePath));
 }
 
 module.exports = getEntry;
