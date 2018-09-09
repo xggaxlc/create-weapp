@@ -1,15 +1,19 @@
 const webpack = require('webpack');
+const chokidar = require('chokidar');
+const notifier = require('node-notifier');
+const shelljs = require('shelljs');
 const webpackConfig = require('./webpack-config');
 const getWebpackConfig = require('./webpack-config');
 const getEntry = require('./get-entry');
-const { appRoot } = require('./config');
+const { appRoot, outputPath } = require('./config');
 
-async function watchCompiler() {
-  const entry = await getEntry(appRoot);
+let webpackWatcher;
+let entryRecord = [];
+async function watchCompiler(entry) {
   const webpackConfig = getWebpackConfig(entry);
   webpackConfig.mode = 'development';
   const compiler = webpack(webpackConfig);
-  compiler.watch({
+  webpackWatcher = compiler.watch({
     poll: true,
     ignored: /node_modules/
   }, (err, stats) => {
@@ -27,4 +31,19 @@ async function watchCompiler() {
   });
 }
 
-watchCompiler();
+async function run() {
+  const entry = await getEntry(appRoot);
+  if (entry.toString() !== entryRecord.toString()) {
+    notifier.notify('webpack building');
+    shelljs.rm('-rf', outputPath);
+    webpackWatcher && webpackWatcher.close();
+    entryRecord = entry.slice();
+    watchCompiler(entry);
+  }
+}
+
+chokidar
+  .watch(`${appRoot}/**/*.json`, { ignoreInitial: true })
+  .on('change', run);
+
+run();

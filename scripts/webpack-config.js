@@ -12,6 +12,28 @@ function getWebpackConfig(entry = []) {
 
   const entryMap = getEntryMap(entry);
 
+  const entryLoader = {
+    loader: path.resolve('scripts/entry-loader.js'),
+    options: {
+      entryMap,
+      entry
+    }
+  }
+
+  const entryFileLoader = {
+    loader: path.resolve('scripts/entry-file-loader.js'),
+    options: {
+      entryMap,
+      entry,
+      exts: ['wxml', 'scss', 'wxss', 'json']
+    }
+  }
+
+  const getOutputPath = (file, replaceExt) => {
+    const filename = file.replace(appRoot, '');
+    return replaceExt ? filename.replace(path.extname(file), replaceExt) : filename;
+  }
+
   const config = {
     devtool: false,
     entry,
@@ -28,32 +50,65 @@ function getWebpackConfig(entry = []) {
         {
           test: /\.ts$/,
           use: [
-            {
-              loader: path.resolve('scripts/entry-loader.js'),
-              options: {
-                entryMap,
-                entry
-              }
-            },
-            'ts-loader'
+            { ...entryLoader },
+            'ts-loader',
+            { ...entryFileLoader }
           ]
         },
         {
-          test: /\.scss$/,
+          test: /\.js$/,
+          use: [
+            { ...entryLoader },
+            {
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env']
+              }
+            },
+            { ...entryFileLoader }
+          ]
+        },
+        {
+          test: /\.(scss)$/,
           use: [
             {
               loader: 'file-loader',
               options: {
                 name(file) {
-                  const ext = path.extname(file);
-                  const filename = file.replace(appRoot, '').replace(ext, '');
-                  return `${filename}.wxss`;
+                  return getOutputPath(file, '.wxss');
                 }
               }
             },
             'extract-loader',
             'css-loader',
             'sass-loader'
+          ]
+        },
+        {
+          type: 'javascript/auto',
+          test: /\.json/,
+          use: [
+            {
+              loader: 'file-loader',
+              options: {
+                name(file) {
+                  return getOutputPath(file);
+                }
+              }
+            }
+          ]
+        },
+        {
+          test: /\.(wxml|wxss)/,
+          use: [
+            {
+              loader: 'file-loader',
+              options: {
+                name(file) {
+                  return getOutputPath(file);
+                }
+              }
+            }
           ]
         }
       ]
@@ -75,11 +130,11 @@ function getWebpackConfig(entry = []) {
         bundleName
       }),
       new CopyWebpackPlugin([{
-        from: appRoot,
+        from: `${appRoot}/**/*.+(png|jpg|jpeg|gif|wxs)`,
         to: outputPath,
         cache: true,
-      }], { ignore: ['*.js', '*.ts', '*.scss', '*.less', '*.css', '*.md'], debug: false })
-
+        context: appRoot
+      }], { debug: false })
     ]
   }
 

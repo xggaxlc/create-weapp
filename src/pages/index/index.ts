@@ -1,5 +1,4 @@
 import flatten from 'lodash-es/flatten';
-import './index.scss';
 
 Page({
   onLoad() {
