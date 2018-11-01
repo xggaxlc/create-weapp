@@ -24,6 +24,7 @@
     "lodash": "^4.17.10",
     "node-notifier": "^5.2.1",
     "node-sass": "^4.9.3",
+    "px2rpx-loader": "^0.1.10",
     "sass": "^1.13.0",
     "sass-loader": "^7.1.0",
     "shelljs": "^0.8.2",
